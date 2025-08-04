@@ -92,9 +92,6 @@ static ssize_t synaptics_rmi4_f01_buildid_show(struct device *dev,
 static ssize_t synaptics_rmi4_f01_flashprog_show(struct device *dev,
 		struct device_attribute *attr, char *buf);
 
-static ssize_t synaptics_rmi4_suspend_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count);
-
 struct synaptics_rmi4_f01_device_status {
 	union {
 		struct {
@@ -404,7 +401,7 @@ static struct device_attribute attrs[] = {
 			synaptics_rmi4_store_error),
 	__ATTR(suspend, S_IWUGO,
 			synaptics_rmi4_show_error,
-			synaptics_rmi4_suspend_store),
+			synaptics_rmi4_suspend),
 };
 
 static ssize_t synaptics_rmi4_f01_reset_store(struct device *dev,
@@ -470,24 +467,6 @@ static ssize_t synaptics_rmi4_f01_flashprog_show(struct device *dev,
 
 	return snprintf(buf, PAGE_SIZE, "%u\n",
 			device_status.flash_prog);
-}
-
-static ssize_t synaptics_rmi4_suspend_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t count)
-{
-	unsigned int input;
-
-	if (sscanf(buf, "%u", &input) != 1)
-		return -EINVAL;
-
-	if (input == 1)
-		synaptics_rmi4_suspend(dev);
-	else if (input == 0)
-		synaptics_rmi4_resume(dev);
-	else
-		return -EINVAL;
-
-	return count;
 }
 
 static int synaptics_rmi4_f11_abs_report(struct synaptics_rmi4_data *rmi4_data,
@@ -922,6 +901,17 @@ static int synaptics_rmi4_sensor_report(struct synaptics_rmi4_data *rmi4_data)
 	}
 
 	status.data[0] = data[0];
+
+
+	dev_info(dev,
+	 "%s: irq=%d, unconfigured=%d, flash_prog=%d, fingers_on_2d=%d, irq_enabled=%d\n",
+	 __func__,
+	 rmi4_data->irq,
+	 status.unconfigured,
+	 status.flash_prog,
+	 rmi4_data->fingers_on_2d,
+	 rmi4_data->irq_enabled);
+	 
 	if (status.unconfigured && !status.flash_prog) {
 		dev_info(dev, "%s: Reconfiguring controller\n", __func__);
 		retval = synaptics_rmi4_reinit_device(rmi4_data);
@@ -1005,40 +995,6 @@ static irqreturn_t synaptics_rmi4_irq(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-static void synaptics_rmi4_irq_work(struct work_struct *work)
-{
-	struct synaptics_rmi4_data *rmi4_data =
-			container_of(work, struct synaptics_rmi4_data,
-					irq_work);
-	const struct synaptics_dsx_board_data *bdata =
-			rmi4_data->hw_if->board_data;
-
-	mutex_lock(&rmi4_data->rmi4_irq_mutex);
-	if (true != rmi4_data->irq_enabled) {
-		/* IRQ is disabled. Must be a race conditon */
-		dev_dbg(rmi4_data->pdev->dev.parent,
-			"IRQ is disabled. exit.\n");
-		mutex_unlock(&rmi4_data->rmi4_irq_mutex);
-		goto exit;
-	}
-	mutex_unlock(&rmi4_data->rmi4_irq_mutex);
-
-	if (gpio_get_value(bdata->irq_gpio) != bdata->irq_on_state) {
-		dev_dbg(rmi4_data->pdev->dev.parent,
-				"%s:No interrupt (irq_gpio = %d), abandon\n",
-				__func__,
-				gpio_get_value(bdata->irq_gpio));
-		synaptics_rmi4_diable_irq_nosync(rmi4_data->irq, rmi4_data, false);
-		goto exit;
-	}
-
-	synaptics_rmi4_sensor_report(rmi4_data);
-	synaptics_rmi4_diable_irq_nosync(rmi4_data->irq, rmi4_data, false);
-
-exit:
-	return;
-}
-
 static int synaptics_rmi4_int_enable(struct synaptics_rmi4_data *rmi4_data,
 		bool enable)
 {
@@ -1115,6 +1071,7 @@ static int synaptics_rmi4_irq_enable(struct synaptics_rmi4_data *rmi4_data,
 		retval = request_irq(rmi4_data->irq,
 				synaptics_rmi4_irq, bdata->irq_flags,
 				PLATFORM_DRIVER_NAME, rmi4_data);
+
 		if (retval < 0) {
 			dev_err(rmi4_data->pdev->dev.parent,
 					"%s: Failed to create irq thread(%d)\n",
@@ -1140,6 +1097,42 @@ static int synaptics_rmi4_irq_enable(struct synaptics_rmi4_data *rmi4_data,
 	mutex_unlock(&rmi4_data->rmi4_irq_mutex);
 
 	return retval;
+}
+
+static void synaptics_rmi4_irq_work(struct work_struct *work)
+{
+	struct synaptics_rmi4_data *rmi4_data =
+			container_of(work, struct synaptics_rmi4_data,
+					irq_work);
+	const struct synaptics_dsx_board_data *bdata =
+			rmi4_data->hw_if->board_data;
+
+	dev_info(rmi4_data->pdev->dev.parent, "%s: irq work", __func__);
+
+	mutex_lock(&rmi4_data->rmi4_irq_mutex);
+	if (true != rmi4_data->irq_enabled) {
+		/* IRQ is disabled. Must be a race conditon */
+		dev_dbg(rmi4_data->pdev->dev.parent,
+			"IRQ is disabled. exit.\n");
+		mutex_unlock(&rmi4_data->rmi4_irq_mutex);
+		goto exit;
+	}
+	mutex_unlock(&rmi4_data->rmi4_irq_mutex);
+
+	if (gpio_get_value(bdata->irq_gpio) != bdata->irq_on_state) {
+		dev_dbg(rmi4_data->pdev->dev.parent,
+				"%s:No interrupt (irq_gpio = %d), abandon\n",
+				__func__,
+				gpio_get_value(bdata->irq_gpio));
+		synaptics_rmi4_diable_irq_nosync(rmi4_data->irq, rmi4_data, false);
+		goto exit;
+	}
+
+	synaptics_rmi4_sensor_report(rmi4_data);
+	synaptics_rmi4_diable_irq_nosync(rmi4_data->irq, rmi4_data, false);
+
+exit:
+	return;
 }
 
 static void synaptics_rmi4_set_intr_mask(struct synaptics_rmi4_fn *fhandler,
@@ -2410,7 +2403,9 @@ static int synaptics_rmi4_reinit_device(struct synaptics_rmi4_data *rmi4_data)
 			if (fhandler->fn_number == SYNAPTICS_RMI4_F12) {
 				retval = synaptics_rmi4_f12_set_enables(rmi4_data, 0);
 				if (retval < 0)
+				{
 					goto exit;
+				}
 				break;
 			}
 		}
@@ -2418,7 +2413,9 @@ static int synaptics_rmi4_reinit_device(struct synaptics_rmi4_data *rmi4_data)
 
 	retval = synaptics_rmi4_int_enable(rmi4_data, true);
 	if (retval < 0)
+	{
 		goto exit;
+	}
 
 	mutex_lock(&rmi4_data->exp_data.mutex);
 	if (!list_empty(&rmi4_data->exp_data.list)) {
@@ -2428,9 +2425,11 @@ static int synaptics_rmi4_reinit_device(struct synaptics_rmi4_data *rmi4_data)
 	}
 	mutex_unlock(&rmi4_data->exp_data.mutex);
 
+	/*
 	if (!rmi4_data->hw_if->board_data->touchpad) {
 		mdss_fb_send_panel_dead(0);
 	}
+	*/
 
 	retval = synaptics_rmi4_set_configured(rmi4_data);
 exit:
@@ -2440,6 +2439,11 @@ exit:
 
 static int synaptics_rmi4_reset_device(struct synaptics_rmi4_data *rmi4_data)
 {
+		dev_err(rmi4_data->pdev->dev.parent,
+				"%s: Reset Synaptics\n",
+				__func__);
+				
+
 	int retval;
 	int temp;
 	struct synaptics_rmi4_exp_fhandler *exp_fhandler;
@@ -2493,9 +2497,14 @@ static int synaptics_rmi4_reset_device(struct synaptics_rmi4_data *rmi4_data)
 
 	synaptics_rmi4_irq_enable(rmi4_data, true, false);
 
+	/*
 	if (!rmi4_data->hw_if->board_data->touchpad) {
+		dev_err(rmi4_data->pdev->dev.parent,
+				"%s: Send panel dead\n",
+				__func__);
 		mdss_fb_send_panel_dead(0);
 	}
+	*/	
 
 	mutex_unlock(&(rmi4_data->rmi4_reset_mutex));
 
@@ -2816,7 +2825,7 @@ static int synaptics_rmi4_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_SLEEP
 static int synaptics_rmi4_sensor_sleep(struct synaptics_rmi4_data *rmi4_data)
 {
 	int retval;
@@ -2911,6 +2920,7 @@ static int synaptics_rmi4_suspend(struct device *dev)
 		goto exit;
 
 	if (!rmi4_data->suspend) {
+
 		synaptics_rmi4_irq_enable(rmi4_data, false, false);
 		synaptics_rmi4_sensor_sleep(rmi4_data);
 		synaptics_rmi4_free_fingers(rmi4_data);
@@ -2944,38 +2954,62 @@ static int synaptics_rmi4_resume(struct device *dev)
 
 	mutex_lock(&rmi4_data->input_dev->mutex);
 
-	if (!rmi4_data->suspend)
-		goto exit;
+			if (rmi4_data->pwr_reg) {
+				retval = regulator_enable(rmi4_data->pwr_reg);
+				if (retval < 0) {
+					dev_err(dev, "%s: Failed to enable regulator\n",
+						__func__);
+					goto exit;
+				}
 
-	if (rmi4_data->stay_awake)
-		goto exit;
+				msleep(bdata->power_delay_ms);
+				rmi4_data->current_page = MASK_8BIT;
+				if (rmi4_data->hw_if->ui_hw_init)
+					rmi4_data->hw_if->ui_hw_init(rmi4_data);
+			}
+					
 
-	if (rmi4_data->pwr_reg) {
-		retval = regulator_enable(rmi4_data->pwr_reg);
-		if (retval < 0) {
-			dev_err(dev, "%s: Failed to enable regulator\n",
-				__func__);
-			goto exit;
-		}
+			retval = synaptics_rmi4_sensor_wake(rmi4_data);
 
-		msleep(bdata->power_delay_ms);
-		rmi4_data->current_page = MASK_8BIT;
-		if (rmi4_data->hw_if->ui_hw_init)
-			rmi4_data->hw_if->ui_hw_init(rmi4_data);
-	}
+			if (retval < 0) {
+				dev_err(dev,
+				"%s: Failed to synaptics_rmi4_sensor_wake, retry = %d, "
+				"reset controller\n", __func__, 1);
+				retval = rmi4_data->reset_device(rmi4_data);
+				goto exit;
+			}
 
-	synaptics_rmi4_sensor_wake(rmi4_data);
-	synaptics_rmi4_irq_enable(rmi4_data, true, false);
+			retval = synaptics_rmi4_irq_enable(rmi4_data, true, false);
 
-	mutex_lock(&rmi4_data->exp_data.mutex);
-	if (!list_empty(&rmi4_data->exp_data.list)) {
-		list_for_each_entry(exp_fhandler, &rmi4_data->exp_data.list, link)
-			if (exp_fhandler->exp_fn->resume != NULL)
-				exp_fhandler->exp_fn->resume(rmi4_data);
-	}
-	mutex_unlock(&rmi4_data->exp_data.mutex);
+			if (retval < 0) {
+				dev_err(dev,
+				"%s: Failed to synaptics_rmi4_irq_enable, retry = %d, "
+				"reset controller\n", __func__, 1);
+				retval = rmi4_data->reset_device(rmi4_data);
+				goto exit;
+			}
+
+			rmi4_data->suspend = false;
+				dev_dbg(rmi4_data->pdev->dev.parent,
+				"%s:suspend=%d\n",
+				__func__, rmi4_data->suspend);
+
+			mutex_lock(&rmi4_data->exp_data.mutex);
+			if (!list_empty(&rmi4_data->exp_data.list)) {
+				list_for_each_entry(exp_fhandler, &rmi4_data->exp_data.list, link)
+					if (exp_fhandler->exp_fn->resume != NULL)
+						exp_fhandler->exp_fn->resume(rmi4_data);
+			}
+			mutex_unlock(&rmi4_data->exp_data.mutex);
+
+	if (rmi4_data->suspend == true)
+		dev_err(dev,
+			"%s: Failed to resume device\n",
+			__func__);
 
 	rmi4_data->suspend = false;
+	mutex_unlock(&rmi4_data->input_dev->mutex);
+
 	dev_info(dev, "Synaptic resume complete\n");
 exit:
 	mutex_unlock(&rmi4_data->input_dev->mutex);
@@ -2992,7 +3026,7 @@ static struct platform_driver synaptics_rmi4_driver = {
 	.driver = {
 		.name = PLATFORM_DRIVER_NAME,
 		.owner = THIS_MODULE,
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_SLEEP
 		.pm = &synaptics_rmi4_dev_pm_ops,
 #endif
 	},

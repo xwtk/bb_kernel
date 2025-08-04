@@ -389,10 +389,11 @@ static int synaptics_rmi4_i2c_probe(struct i2c_client *client,
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_PM_RUNTIME
-	pm_runtime_enable(&client->dev);
+	/*
+#ifdef CONFIG_PM_SLEEP
+	pm_enable(&client->dev);
 #endif
-
+*/
 	return 0;
 }
 
@@ -404,29 +405,28 @@ static int synaptics_rmi4_i2c_remove(struct i2c_client *client)
 
 	return 0;
 }
-/*
-#ifdef CONFIG_PM_RUNTIME
-static int synaptics_rmi4_i2c_runtime_resume(struct device *dev)
+
+#ifdef CONFIG_PM_SLEEP
+static int synaptics_rmi4_resume(struct device *dev)
 {
 	struct platform_device *platform_dev = dev_get_drvdata(dev);
 
-	return synaptics_rmi4_runtime_resume(&platform_dev->dev);
+	return synaptics_rmi4_resume(&platform_dev->dev);
 }
 
-static int synaptics_rmi4_i2c_runtime_idle(struct device *dev)
+static int synaptics_rmi4_idle(struct device *dev)
 {
 	return 0;
 }
 
-static int synaptics_rmi4_i2c_runtime_suspend(struct device *dev)
+static int synaptics_rmi4_suspend(struct device *dev)
 {
 	struct platform_device *platform_dev = dev_get_drvdata(dev);
 
-	return synaptics_rmi4_runtime_suspend(&platform_dev->dev);
+	return synaptics_rmi4_suspend(&platform_dev->dev);
 }
 
 #endif
-*/
 
 static const struct i2c_device_id synaptics_rmi4_id_table[] = {
 	{I2C_DRIVER_NAME, 0},
@@ -446,26 +446,24 @@ MODULE_DEVICE_TABLE(of, synaptics_rmi4_of_match_table);
 #define synaptics_rmi4_of_match_table NULL
 #endif
 
-/*
 static const struct dev_pm_ops synaptics_rmi4_i2c_pm_ops = {
-#ifdef CONFIG_PM_RUNTIME
-	SET_RUNTIME_PM_OPS(synaptics_rmi4_i2c_runtime_suspend,
-					   synaptics_rmi4_i2c_runtime_resume,
-					   synaptics_rmi4_i2c_runtime_idle)
+#ifdef CONFIG_PM_SLEEP
+	SET_RUNTIME_PM_OPS(synaptics_rmi4_suspend,
+					   synaptics_rmi4_resume,
+					   synaptics_rmi4_idle)
 #endif
 };
-*/
 
 static struct i2c_driver synaptics_rmi4_i2c_driver = {
 	.driver = {
 		.name = I2C_DRIVER_NAME,
 		.owner = THIS_MODULE,
 		.of_match_table = synaptics_rmi4_of_match_table,
-		/*
+		
 #ifdef CONFIG_PM
 		.pm = &synaptics_rmi4_i2c_pm_ops,
 #endif
-*/
+
 	},
 	.probe = synaptics_rmi4_i2c_probe,
 	.remove = synaptics_rmi4_i2c_remove,

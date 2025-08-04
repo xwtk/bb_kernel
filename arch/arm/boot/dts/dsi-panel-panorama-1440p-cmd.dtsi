@@ -71,7 +71,7 @@
 		qcom,mdss-dsi-dma-trigger = "trigger_sw";
 		qcom,mdss-dsi-mdp-trigger = "none";
 		qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
-		qcom,mdss-dsi-reset-sequence = <1 60>, <0 200>, <1 60>;
+		qcom,mdss-dsi-reset-sequence = <1 50>, <0 100>, <1 50>;
 		qcom,partial-update-enabled;
 		cm,mdss-livedisplay-cabc-cmd = [15 01 00 00 10 00 02 55 00];
 		cm,mdss-livedisplay-cabc-ui-value = <0x01>;
