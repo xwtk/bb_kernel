@@ -139,7 +139,7 @@ static void led_timer_function(unsigned long data)
 void led_classdev_suspend(struct led_classdev *led_cdev)
 {
 	led_cdev->flags |= LED_SUSPENDED;
-	led_cdev->brightness_set(led_cdev, 0);
+	led_cdev->brightness_set(led_cdev, LED_OFF);
 }
 EXPORT_SYMBOL_GPL(led_classdev_suspend);
 
