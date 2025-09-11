@@ -367,9 +367,9 @@
 		interrupt-parent = <&spmi_bus>;
 		keypad,num-rows = <6>;
 		keypad,num-cols = <5>;
-		qcom,scan-delay-ms = <112>;
-		qcom,row-hold-ns = <62500>;
-		qcom,debounce-ms = <10>;
+		qcom,scan-delay-ms = <45>;
+		qcom,row-hold-ns = <31250>;
+		qcom,debounce-ms = <20>;
 		linux,keypad-no-autorepeat;
 		linux,keymap = <0x02000010 /* row: 2 column: 0 keycode: KEY_Q */
 				0x02010011 /* row: 2 column: 1 keycode: KEY_W */
