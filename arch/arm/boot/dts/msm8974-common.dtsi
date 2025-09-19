@@ -620,7 +620,6 @@
 			qcom,ramp-step-ms = <120>;
 			qcom,duty-pcts = [00 00 00 00 64 64 00 00 00 00];
 			qcom,in-order-command-processing;
-			linux,default-trigger = "bkl-trigger";
 		};
 
 		qcom,kpdbl2 {
@@ -637,7 +636,6 @@
             qcom,ramp-step-ms = <120>;
             qcom,duty-pcts = [00 00 00 00 64 64 00 00 00 00];
             qcom,in-order-command-processing;
-			linux,default-trigger = "bkl-trigger";
 		};
 
 		qcom,kpdbl3 {
@@ -654,7 +652,6 @@
             qcom,ramp-step-ms = <120>;
             qcom,duty-pcts = [00 00 00 00 64 64 00 00 00 00];
             qcom,in-order-command-processing;
-			linux,default-trigger = "bkl-trigger";
 		};
 
 		qcom,kpdbl4 {
@@ -671,7 +668,6 @@
             qcom,ramp-step-ms = <120>;
             qcom,duty-pcts = [00 00 00 00 64 64 00 00 00 00];
             qcom,in-order-command-processing;
-			linux,default-trigger = "bkl-trigger";
 		};
 	};
 };
