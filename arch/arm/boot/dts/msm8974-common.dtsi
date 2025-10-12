@@ -174,9 +174,8 @@
 			synaptics,irq-flags = <0x2008>; //IRQF_TRIGGER_LOW | IRQF_ONESHOT
 			synaptics,reset-gpio = <&msmgpio 49 0>;
 			synaptics,reset-on-state = <0>;
-			synaptics,reset-delay-ms = <25>;
-			synaptics,power-delay-ms = <25>;
-			synaptics,reset-active-ms = <50>;
+			synaptics,reset-delay-ms = <63>;
+			synaptics,reset-active-ms = <1>;
 			synaptics,firmware = "synaptics/passport_display.bin";
 		};
 	};
@@ -727,9 +726,14 @@
 			1 &intc 0 224 0
 			2 &msmgpio 77 0x8>;
 	interrupt-names = "hc_irq", "pwr_irq", "wlan_oob_irq";
+	vdd-supply = <&pm8941_l17>;
 	vdd-io-supply = <&pm8941_s3>;
+	qcom,vdd-voltage-level = <2950000 2950000>;
+	qcom,vdd-current-level = <8000 400000>;
 	qcom,vdd-io-voltage-level = <1800000 1800000>;
 	qcom,vdd-io-current-level = <6 22000>;
+	qcom,init-wait-ms = <500>;
+	qcom,nonremovable;
 	qcom,wifi-control-func;
 	status = "ok";
 };
