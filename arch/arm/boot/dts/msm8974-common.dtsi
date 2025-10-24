@@ -398,7 +398,8 @@
 				0x05010030 /* row: 5 column: 1 keycode: KEY_B */
 				0x05020031 /* row: 5 column: 2 keycode: KEY_N */
 				0x05030032 /* row: 5 column: 3 keycode: KEY_M */
-				0x0504001c>; /* row: 5 column: 4 keycode: KEY_ENTER */
+				0x0504001c /* row: 5 column: 4 keycode: KEY_ENTER */
+				0x0600002a>; /* row: 6 column: 0 keycode: KEY_LEFTSHIFT, VIRTUAL */
 	};
 
 	qcom,vibrator@c000 {
