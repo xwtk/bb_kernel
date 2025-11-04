@@ -170,12 +170,11 @@
 			synaptics,pwr-reg-name = "vdd";
 			synaptics,input-device-name = "touch_display";
 			synaptics,irq-gpio = <&msmgpio 64 0>;
-			synaptics,irq-on-state = <0>;
 			synaptics,irq-flags = <0x2008>; //IRQF_TRIGGER_LOW | IRQF_ONESHOT
 			synaptics,reset-gpio = <&msmgpio 49 0>;
 			synaptics,reset-on-state = <0>;
-			synaptics,reset-delay-ms = <63>;
-			synaptics,reset-active-ms = <1>;
+			synaptics,reset-delay-ms = <60>;
+			synaptics,reset-active-ms = <200>;
 			synaptics,firmware = "synaptics/passport_display.bin";
 		};
 	};
