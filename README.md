@@ -1,3 +1,10 @@
+# Kernel for BlackBerry Passport devices operating on xwtk.Harpocrat software
+This kernel is based on Balika011's BBAndroids/android_kernel_blackberry_msm8974 and contributions from other members of the "BlackBerry Android Hideout" community.
+Includes fixes and other improvements.
+
+This kernel is optimized for use with xwtk.Harpocrat software on BlackBerry Passport, be cautious when integrating it to other ROMs or devices.
+
+```
 	Linux kernel release 3.x <http://kernel.org/>
 
 These are the release notes for Linux version 3.  Read them carefully,
@@ -374,3 +381,4 @@ IF SOMETHING GOES WRONG:
    gdb'ing a non-running kernel currently fails because gdb (wrongly)
    disregards the starting offset for which the kernel is compiled.
 
+```
