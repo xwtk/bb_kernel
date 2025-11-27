@@ -100,7 +100,7 @@
 		        "CAM_LDO_EN";
 		qcom,gpio-set-tbl-num = <1 1 2 2>;
 		qcom,gpio-set-tbl-flags = <0 2 0 2>;
-		qcom,gpio-set-tbl-delay = <1000 4000 1000 4000>;
+		qcom,gpio-set-tbl-delay = <2000 8000 2000 8000>;
 		qcom,csi-lane-assign = <0x4320>;
 		qcom,csi-lane-mask = <0x03>;
 		qcom,cam-power-seq-type = "sensor_gpio",
@@ -183,7 +183,7 @@
 					  "CAM_LDO_EN";
 		qcom,gpio-set-tbl-num = <1 1 2 2>;
 		qcom,gpio-set-tbl-flags = <0 2 0 2>;
-		qcom,gpio-set-tbl-delay = <1000 4000 1000 4000>;
+		qcom,gpio-set-tbl-delay = <2000 8000 2000 8000>;
 		qcom,csi-lane-assign = <0x4320>;
 		qcom,csi-lane-mask = <0x3>;
 		qcom,sensor-position = <1>;
