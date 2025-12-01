@@ -173,8 +173,10 @@
 			synaptics,irq-flags = <0x2008>; //IRQF_TRIGGER_LOW | IRQF_ONESHOT
 			synaptics,reset-gpio = <&msmgpio 49 0>;
 			synaptics,reset-on-state = <0>;
-			synaptics,reset-delay-ms = <60>;
-			synaptics,reset-active-ms = <200>;
+			synaptics,reset-delay-ms = <50>;
+			synaptics,reset-active-ms = <150>;
+			synaptics,power-delay-ms = <50>;
+			synaptics,irq-on-state = <0>;
 			synaptics,firmware = "synaptics/passport_display.bin";
 		};
 	};
